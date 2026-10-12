@@ -24,7 +24,11 @@ object BinaryScanner {
         FLOATLE("float LE", 4),
         FLOATBE("float BE", 4),
         DOUBLELE("double LE", 8),
-        DOUBLEBE("double BE", 8)
+        DOUBLEBE("double BE", 8),
+        VARINT("varint (LEB128)", -1),
+        VARINT_ZIGZAG("varint zigzag", -1),
+        ASCII_STR("ASCII string", -1),
+        UTF16LE_STR("UTF-16 LE string", -1)
     }
 
     fun scanInt(file: File, value: Long, type: ValueType): List<Match> {
@@ -38,6 +42,41 @@ object BinaryScanner {
         if (!file.exists()) return emptyList()
         val pattern = encodeFloat(value, type)
         return scanPattern(file, pattern, pattern.size)
+    }
+
+    // LEB128 varint encoding
+    fun encodeVarint(value: Long, zigzag: Boolean): ByteArray {
+        val v = if (zigzag) {
+            (value shl 1) xor (value shr 63)
+        } else value
+        val out = mutableListOf<Byte>()
+        var x = v
+        while (true) {
+            val b = (x and 0x7F).toInt()
+            x = x ushr 7
+            if (x == 0L) { out.add(b.toByte()); break }
+            out.add((b or 0x80).toByte())
+        }
+        return out.toByteArray()
+    }
+
+    fun scanVarint(file: File, value: Long, zigzag: Boolean): List<Match> {
+        if (!file.exists()) return emptyList()
+        val pattern = encodeVarint(value, zigzag)
+        return scanPattern(file, pattern, pattern.size)
+    }
+
+    fun scanAscii(file: File, text: String): List<Match> {
+        if (!file.exists()) return emptyList()
+        val pattern = text.toByteArray(Charsets.US_ASCII)
+        return scanPattern(file, pattern, pattern.size)
+    }
+
+    fun scanUtf16Le(file: File, text: String): List<Match> {
+        if (!file.exists()) return emptyList()
+        val bb = ByteBuffer.allocate(text.length * 2).order(ByteOrder.LITTLE_ENDIAN)
+        for (c in text) bb.putChar(c)
+        return scanPattern(file, bb.array(), bb.array().size)
     }
 
     private fun scanPattern(file: File, pattern: ByteArray, size: Int): List<Match> {
@@ -78,8 +117,9 @@ object BinaryScanner {
     }
 
     private fun makeMatch(file: File, offset: Int, size: Int): Match {
+        val s = if (size < 0) 4 else size
         val start = (offset - 4).coerceAtLeast(0)
-        val end = (offset + size + 12).coerceAtMost(file.length().toInt())
+        val end = (offset + s + 12).coerceAtMost(file.length().toInt())
         val buf = ByteArray(end - start)
         RandomAccessFile(file, "r").use { raf ->
             raf.seek(start.toLong())

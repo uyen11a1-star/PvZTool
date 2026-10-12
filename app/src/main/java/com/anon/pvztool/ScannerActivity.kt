@@ -32,17 +32,21 @@ class ScannerActivity : AppCompatActivity() {
     private var currentType: BinaryScanner.ValueType = BinaryScanner.ValueType.INT32LE
 
     private val types = listOf(
-        BinaryScanner.ValueType.INT8,
-        BinaryScanner.ValueType.INT16LE,
-        BinaryScanner.ValueType.INT16BE,
+        BinaryScanner.ValueType.VARINT,
+        BinaryScanner.ValueType.VARINT_ZIGZAG,
         BinaryScanner.ValueType.INT32LE,
         BinaryScanner.ValueType.INT32BE,
+        BinaryScanner.ValueType.INT16LE,
+        BinaryScanner.ValueType.INT16BE,
         BinaryScanner.ValueType.INT64LE,
         BinaryScanner.ValueType.INT64BE,
+        BinaryScanner.ValueType.INT8,
         BinaryScanner.ValueType.FLOATLE,
         BinaryScanner.ValueType.FLOATBE,
         BinaryScanner.ValueType.DOUBLELE,
-        BinaryScanner.ValueType.DOUBLEBE
+        BinaryScanner.ValueType.DOUBLEBE,
+        BinaryScanner.ValueType.ASCII_STR,
+        BinaryScanner.ValueType.UTF16LE_STR
     )
 
     private val keys = listOf("coin", "gem", "mint", "gauntlet", "pennyfuel", "zensun", "trophy")
@@ -95,18 +99,38 @@ class ScannerActivity : AppCompatActivity() {
                     runOnUiThread { status.text = "Lỗi: không đọc được pp.dat"; scanBtn.isEnabled = true }
                     return@Thread
                 }
-                val matches = if (currentType.name.contains("FLOAT") || currentType.name.contains("DOUBLE")) {
-                    val f = txt.toFloatOrNull() ?: run {
-                        runOnUiThread { status.text = "Giá trị không phải số thực"; scanBtn.isEnabled = true }
-                        return@Thread
+                val matches = when (currentType) {
+                    BinaryScanner.ValueType.VARINT -> {
+                        val v = txt.toLongOrNull() ?: run {
+                            runOnUiThread { status.text = "Giá trị không phải số"; scanBtn.isEnabled = true }
+                            return@Thread
+                        }
+                        BinaryScanner.scanVarint(tmp, v, zigzag = false)
                     }
-                    BinaryScanner.scanFloat(tmp, f, currentType)
-                } else {
-                    val v = txt.toLongOrNull() ?: run {
-                        runOnUiThread { status.text = "Giá trị không phải số nguyên"; scanBtn.isEnabled = true }
-                        return@Thread
+                    BinaryScanner.ValueType.VARINT_ZIGZAG -> {
+                        val v = txt.toLongOrNull() ?: run {
+                            runOnUiThread { status.text = "Giá trị không phải số"; scanBtn.isEnabled = true }
+                            return@Thread
+                        }
+                        BinaryScanner.scanVarint(tmp, v, zigzag = true)
                     }
-                    BinaryScanner.scanInt(tmp, v, currentType)
+                    BinaryScanner.ValueType.ASCII_STR -> BinaryScanner.scanAscii(tmp, txt)
+                    BinaryScanner.ValueType.UTF16LE_STR -> BinaryScanner.scanUtf16Le(tmp, txt)
+                    else -> {
+                        if (currentType.name.contains("FLOAT") || currentType.name.contains("DOUBLE")) {
+                            val f = txt.toFloatOrNull() ?: run {
+                                runOnUiThread { status.text = "Giá trị không phải số thực"; scanBtn.isEnabled = true }
+                                return@Thread
+                            }
+                            BinaryScanner.scanFloat(tmp, f, currentType)
+                        } else {
+                            val v = txt.toLongOrNull() ?: run {
+                                runOnUiThread { status.text = "Giá trị không phải số nguyên"; scanBtn.isEnabled = true }
+                                return@Thread
+                            }
+                            BinaryScanner.scanInt(tmp, v, currentType)
+                        }
+                    }
                 }
                 runOnUiThread {
                     adapter.update(matches)
