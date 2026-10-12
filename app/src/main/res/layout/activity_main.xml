@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FAFAFE">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_launcher"
+                android:contentDescription="icon" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PvZ Tool"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="#1A1A2E" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Search &amp; Patch save"
+                    android:textSize="12sp"
+                    android:textColor="#666680" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/statusBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:padding="12dp"
+            android:background="#F0EFF7"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textColor="#3A3A5C" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnShizuku"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Cấp quyền Shizuku"
+            app:backgroundTint="#A855F7"
+            android:textColor="#FFFFFF" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBackup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Sao lưu ngay (pp.dat → Download)"
+            app:backgroundTint="#06B6D4"
+            android:textColor="#FFFFFF" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnScanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="1. Quét giá trị → tìm offset"
+            app:backgroundTint="#FF1493"
+            android:textColor="#FFFFFF"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSlider"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="2. Chỉnh giá trị (slider)"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBackups"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Quản lý backup" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnInfo"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Hướng dẫn sử dụng" />
+
+        <TextView
+            android:id="@+id/savedOffsets"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:padding="12dp"
+            android:background="#FFFFFF"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textColor="#3A3A5C" />
+    </LinearLayout>
+</ScrollView>

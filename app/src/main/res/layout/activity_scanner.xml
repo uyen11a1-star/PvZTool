@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FAFAFE">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/scannerToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="#FFFFFF"
+        app:navigationIcon="@android:drawable/ic_menu_revert"
+        app:title="Scanner"
+        app:titleTextColor="#1A1A2E" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:background="#F0EFF7">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Giá trị hiện tại trong game"
+            android:textSize="12sp"
+            android:textColor="#3A3A5C" />
+
+        <EditText
+            android:id="@+id/scanValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ví dụ: 1220"
+            android:inputType="numberDecimal"
+            android:background="#FFFFFF"
+            android:padding="12dp"
+            android:layout_marginTop="6dp"
+            android:importantForAutofill="no" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Kiểu dữ liệu"
+            android:textSize="12sp"
+            android:textColor="#3A3A5C"
+            android:layout_marginTop="10dp" />
+
+        <Spinner
+            android:id="@+id/scanType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#FFFFFF"
+            android:layout_marginTop="6dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/scanBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Quét"
+            app:backgroundTint="#FF1493"
+            android:textColor="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/scanStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textColor="#666680" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/scanHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="Tap vào offset để chọn — sau đó nhấn 'Lưu offset làm Coin/Gem/...'"
+        android:textSize="11sp"
+        android:background="#FFE4F0"
+        android:textColor="#B91C1C"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/scanRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="6dp"
+        android:clipToPadding="false" />
+
+    <LinearLayout
+        android:id="@+id/savePanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="#FFFFFF"
+        android:elevation="4dp"
+        android:visibility="gone">
+
+        <Spinner
+            android:id="@+id/saveKey"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/saveBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Lưu offset"
+            app:backgroundTint="#059669"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+</LinearLayout>

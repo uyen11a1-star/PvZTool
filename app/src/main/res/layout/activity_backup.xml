@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FAFAFE">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/bkToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="#FFFFFF"
+        app:navigationIcon="@android:drawable/ic_menu_revert"
+        app:title="Backup"
+        app:titleTextColor="#1A1A2E" />
+
+    <TextView
+        android:id="@+id/bkPath"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:background="#F0EFF7"
+        android:textSize="11sp"
+        android:fontFamily="monospace"
+        android:textColor="#3A3A5C" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/bkCreate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:text="Tạo backup mới"
+        app:backgroundTint="#06B6D4"
+        android:textColor="#FFFFFF" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/bkRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="6dp"
+        android:clipToPadding="false" />
+</LinearLayout>
