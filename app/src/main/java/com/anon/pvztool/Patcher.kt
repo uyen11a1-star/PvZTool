@@ -92,4 +92,69 @@ object Patcher {
         val res = ShizukuShell.exec("cp ${ShizukuShell.quote(localPath)} ${ShizukuShell.quote(remote)} 2>&1")
         return if (res.contains("Permission denied", true) || res.startsWith("ERR")) res else "OK"
     }
+
+    // Đếm số byte của varint (LEB128)
+    fun varintLength(value: Long): Int {
+        var v = value
+        var n = 1
+        while (v >= 0x80) { v = v ushr 7; n++ }
+        return n
+    }
+
+    // Đọc varint tại offset — trả về (value, bytesRead)
+    fun readVarintAt(file: File, offset: Int): Pair<Long, Int>? {
+        if (!file.exists() || offset < 0 || offset >= file.length()) return null
+        try {
+            RandomAccessFile(file, "r").use { raf ->
+                raf.seek(offset.toLong())
+                var result = 0L
+                var shift = 0
+                var bytesRead = 0
+                while (shift <= 63) {
+                    val b = raf.read()
+                    if (b < 0) return null
+                    bytesRead++
+                    result = result or ((b.toLong() and 0x7F) shl shift)
+                    if (b and 0x80 == 0) return result to bytesRead
+                    shift += 7
+                }
+            }
+        } catch (e: Exception) { }
+        return null
+    }
+
+    // Ghi varint — PHẢI cùng số byte với varint hiện tại
+    fun writeVarintSafe(file: File, offset: Int, value: Long, zigzag: Boolean = false): String {
+        if (!file.exists()) return "ERR: file không tồn tại"
+        val current = readVarintAt(file, offset) ?: return "ERR: không đọc được varint tại offset"
+        val oldLen = current.second
+        val v = if (zigzag) (value shl 1) xor (value shr 63) else value
+        val newLen = varintLength(v)
+        if (newLen != oldLen) {
+            val maxForLen = when (oldLen) {
+                1 -> 127L
+                2 -> 16383L
+                3 -> 2097151L
+                4 -> 268435455L
+                else -> Long.MAX_VALUE
+            }
+            return "ERR: cần $oldLen byte (hiện tại) nhưng giá trị mới cần $newLen byte. Max cho phép: $maxForLen"
+        }
+        val bytes = mutableListOf<Byte>()
+        var x = v
+        while (true) {
+            val b = (x and 0x7F).toInt()
+            x = x ushr 7
+            if (x == 0L) { bytes.add(b.toByte()); break }
+            bytes.add((b or 0x80).toByte())
+        }
+        return try {
+            RandomAccessFile(file, "rw").use { raf ->
+                raf.seek(offset.toLong())
+                raf.write(bytes.toByteArray())
+            }
+            "OK"
+        } catch (e: Exception) { "ERR: ${e.message}" }
+    }
+
 }
