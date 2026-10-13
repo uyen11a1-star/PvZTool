@@ -147,6 +147,7 @@ object BinaryScanner {
             ValueType.FLOATBE -> bb.order(ByteOrder.BIG_ENDIAN).putFloat(value.toFloat())
             ValueType.DOUBLELE -> bb.order(ByteOrder.LITTLE_ENDIAN).putDouble(value.toDouble())
             ValueType.DOUBLEBE -> bb.order(ByteOrder.BIG_ENDIAN).putDouble(value.toDouble())
+            else -> return ByteArray(0)
         }
         return bb.array()
     }

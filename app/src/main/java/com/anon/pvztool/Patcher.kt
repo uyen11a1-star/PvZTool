@@ -29,6 +29,7 @@ object Patcher {
             BinaryScanner.ValueType.FLOATBE -> bb.order(ByteOrder.BIG_ENDIAN).float
             BinaryScanner.ValueType.DOUBLELE -> bb.order(ByteOrder.LITTLE_ENDIAN).double
             BinaryScanner.ValueType.DOUBLEBE -> bb.order(ByteOrder.BIG_ENDIAN).double
+            else -> null
         }
     }
 
