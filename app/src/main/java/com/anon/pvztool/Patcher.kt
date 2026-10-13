@@ -10,6 +10,10 @@ object Patcher {
     // Đọc giá trị tại offset theo type
     fun read(file: File, offset: Int, type: BinaryScanner.ValueType): Any? {
         if (!file.exists()) return null
+        if (type.size <= 0) {
+            // Varint / string — không đọc được qua đường này
+            return null
+        }
         if (offset < 0 || offset + type.size > file.length()) return null
         val buf = ByteArray(type.size)
         RandomAccessFile(file, "r").use { raf ->

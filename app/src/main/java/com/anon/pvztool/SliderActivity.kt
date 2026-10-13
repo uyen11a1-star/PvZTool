@@ -63,12 +63,22 @@ class SliderActivity : AppCompatActivity() {
         for (key in OffsetStore.allKeys()) {
             val f = OffsetStore.get(this, key) ?: continue
             val type = try { BinaryScanner.ValueType.valueOf(f.type) } catch (_: Exception) { BinaryScanner.ValueType.INT32LE }
-            val cur = Patcher.read(tmp, f.offset, type)
-            val curLong = when (cur) {
-                is Long -> cur
-                is Float -> cur.toLong()
-                is Double -> cur.toLong()
-                else -> 0L
+            val curLong = if (type.name.startsWith("VARINT")) {
+                val zig = type.name == "VARINT_ZIGZAG"
+                val pair = Patcher.readVarintAt(tmp, f.offset)
+                if (pair == null) 0L
+                else {
+                    val raw = pair.first
+                    if (zig) (raw ushr 1) xor -(raw and 1L) else raw
+                }
+            } else {
+                val cur = Patcher.read(tmp, f.offset, type)
+                when (cur) {
+                    is Long -> cur
+                    is Float -> cur.toLong()
+                    is Double -> cur.toLong()
+                    else -> 0L
+                }
             }
             val max = when (key) {
                 "coin" -> 999_999_999L
