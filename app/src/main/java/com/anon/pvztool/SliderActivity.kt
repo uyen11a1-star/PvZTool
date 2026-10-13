@@ -122,38 +122,104 @@ class SliderActivity : AppCompatActivity() {
         }
 
         val tmp = copyPpDatLocal() ?: run { toast("Copy pp.dat thất bại"); return }
+
+        // Log để chẩn đoán
+        val log = StringBuilder()
+        log.append("File local: ${tmp.absolutePath}\n")
+        log.append("Size local: ${tmp.length()} bytes\n\n")
+
         var okCount = 0
         var errCount = 0
+        val errMsgs = mutableListOf<String>()
+        for (r in rows) {
+            if (r.newValue == r.current) {
+                log.append("${r.key}: bỏ qua (giá trị không đổi)\n")
+                continue
+            }
+            val isFloat = r.type.name.contains("FLOAT") || r.type.name.contains("DOUBLE")
+            val isVarint = r.type.name.startsWith("VARINT")
+            val zig = r.type.name == "VARINT_ZIGZAG"
+            val err = when {
+                isVarint -> Patcher.writeVarintSafe(tmp, r.offset, r.newValue, zig)
+                isFloat -> Patcher.writeFloat(tmp, r.offset, r.newValue.toFloat(), r.type)
+                else -> Patcher.writeInt(tmp, r.offset, r.newValue, r.type)
+            }
+            log.append("${r.key}: write → $err\n")
+            if (err == "OK") okCount++
+            else { errCount++; if (errMsgs.size < 3) errMsgs.add("${r.key}: ${err}") }
+        }
+
+        if (okCount == 0) {
+            AlertDialog.Builder(this)
+                .setTitle("Không có thay đổi")
+                .setMessage(log.toString())
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+        // Verify: đọc lại file local để xác nhận giá trị mới
+        log.append("\n--- Verify local ---\n")
         for (r in rows) {
             if (r.newValue == r.current) continue
-            val isFloat = r.type.name.contains("FLOAT") || r.type.name.contains("DOUBLE")
-            val err = if (isFloat) Patcher.writeFloat(tmp, r.offset, r.newValue.toFloat(), r.type)
-                      else Patcher.writeInt(tmp, r.offset, r.newValue, r.type)
-            if (err == "OK") okCount++ else errCount++
+            val isVarint = r.type.name.startsWith("VARINT")
+            val newVal = if (isVarint) {
+                val p = Patcher.readVarintAt(tmp, r.offset)
+                p?.first ?: -1L
+            } else {
+                val c = Patcher.read(tmp, r.offset, r.type)
+                when (c) { is Long -> c; is Float -> c.toLong(); is Double -> c.toLong(); else -> -1L }
+            }
+            log.append("${r.key} local sau patch = $newVal (kỳ vọng ${r.newValue})\n")
         }
 
-        if (okCount == 0 && errCount == 0) {
-            toast("Không có thay đổi")
-            return
-        }
-
-        // Copy ngược về pp.dat
+        // Copy ngược về remote
         val remote = ShizukuShell.translate(Const.PP_DAT)
-        val res = ShizukuShell.exec("cp ${ShizukuShell.quote(tmp.absolutePath)} ${ShizukuShell.quote(remote)} 2>&1")
-        if (res.contains("Permission denied", true) || res.startsWith("ERR")) {
-            toast("Ghi pp.dat thất bại: $res")
-            return
+        log.append("\n--- Ghi ngược về remote ---\n")
+        log.append("Remote: $remote\n")
+
+        // Xóa remote trước để chắc chắn ghi đè
+        val rmRes = ShizukuShell.exec("rm -f ${ShizukuShell.quote(remote)} 2>&1")
+        log.append("rm: ${rmRes.trim().ifBlank { "(ok)" }}\n")
+
+        val cpRes = ShizukuShell.exec("cp ${ShizukuShell.quote(tmp.absolutePath)} ${ShizukuShell.quote(remote)} 2>&1")
+        log.append("cp: ${cpRes.trim().ifBlank { "(ok)" }}\n")
+
+        // Verify remote sau khi ghi
+        log.append("\n--- Verify remote ---\n")
+        val remoteCheck = ShizukuShell.exec("ls -la ${ShizukuShell.quote(remote)} 2>&1")
+        log.append(remoteCheck.trim() + "\n")
+
+        // Copy remote về local 1 lần nữa để verify
+        val verifyLocal = File(getExternalFilesDir("work"), "verify.dat")
+        ShizukuShell.exec("cp ${ShizukuShell.quote(remote)} ${ShizukuShell.quote(verifyLocal.absolutePath)} 2>&1")
+        if (verifyLocal.exists()) {
+            for (r in rows) {
+                if (r.newValue == r.current) continue
+                val isVarint = r.type.name.startsWith("VARINT")
+                val v = if (isVarint) {
+                    val p = Patcher.readVarintAt(verifyLocal, r.offset)
+                    p?.first ?: -1L
+                } else {
+                    val c = Patcher.read(verifyLocal, r.offset, r.type)
+                    when (c) { is Long -> c; is Float -> c.toLong(); is Double -> c.toLong(); else -> -1L }
+                }
+                val mark = if (v == r.newValue) "✓" else "✗"
+                log.append("$mark ${r.key} remote = $v (kỳ vọng ${r.newValue})\n")
+            }
+        } else {
+            log.append("⚠ Không copy được remote về để verify\n")
         }
 
         AlertDialog.Builder(this)
-            .setTitle("Xong")
-            .setMessage("Đã patch $okCount field${if (errCount > 0) ", $errCount lỗi" else ""}.\n\n" +
-                        "Bước tiếp:\n" +
-                        "1. Mở PvZ2\n" +
-                        "2. Nếu giá trị chưa đổi → Settings → Apps → PvZ2 → Force Stop → mở lại\n" +
-                        "3. Nếu vẫn không đổi → khởi động lại điện thoại\n\n" +
-                        "Backup: ${bk.removePrefix("OK: ")}")
-            .setPositiveButton("OK") { _, _ -> recreate() }
+            .setTitle("Kết quả")
+            .setMessage(log.toString())
+            .setPositiveButton("OK") { _, _ -> loadFields() }
+            .setNeutralButton("Copy log") { _, _ ->
+                val cm = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("log", log.toString()))
+                toast("Đã copy log")
+            }
             .show()
     }
 
@@ -161,6 +227,8 @@ class SliderActivity : AppCompatActivity() {
         val ext = getExternalFilesDir("work") ?: cacheDir
         if (!ext.exists()) ext.mkdirs()
         val local = File(ext, "pp.dat")
+        // Xóa file tạm cũ để không nhầm với lần trước
+        if (local.exists()) local.delete()
         val remote = ShizukuShell.translate(Const.PP_DAT)
         val res = ShizukuShell.exec("cp ${ShizukuShell.quote(remote)} ${ShizukuShell.quote(local.absolutePath)} 2>&1")
         if (res.contains("Permission denied", true) || res.startsWith("ERR")) return null
