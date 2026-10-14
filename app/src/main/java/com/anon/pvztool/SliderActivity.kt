@@ -137,7 +137,7 @@ class SliderActivity : AppCompatActivity() {
                 else -> Patcher.writeInt(tmp, r.offset, safeVal, r.type)
             }
             log.append("${r.key}: write → $err\n")
-            if (err == "OK") okCount++
+            if (err.startsWith("OK")) okCount++
             else { errCount++; if (errMsgs.size < 3) errMsgs.add("${r.key}: ${err}") }
         }
 
