@@ -55,7 +55,12 @@ class SliderAdapter(
             override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
             override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                val v = s?.toString()?.toLongOrNull() ?: return
+                var v = s?.toString()?.toLongOrNull() ?: return
+                if (v > r.max) {
+                    v = r.max
+                    h.input.setText(v.toString())
+                    h.input.setSelection(h.input.text.length)
+                }
                 r.newValue = v
                 h.seek.progress = ((v.toDouble() / r.max) * 1000).toInt().coerceIn(0, 1000)
             }

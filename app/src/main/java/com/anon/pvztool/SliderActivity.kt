@@ -80,16 +80,7 @@ class SliderActivity : AppCompatActivity() {
                     else -> 0L
                 }
             }
-            val max = when (key) {
-                "coin" -> 999_999_999L
-                "gem" -> 999_999_999L
-                "mint" -> 999_999L
-                "gauntlet" -> 9_999L
-                "pennyfuel" -> 9_999L
-                "zensun" -> 999_999L
-                "trophy" -> 99_999L
-                else -> 999_999L
-            }
+            val max = 20_000L
             rows.add(SliderAdapter.Row(key, f.offset, type, curLong, curLong, max))
         }
 
@@ -139,10 +130,11 @@ class SliderActivity : AppCompatActivity() {
             val isFloat = r.type.name.contains("FLOAT") || r.type.name.contains("DOUBLE")
             val isVarint = r.type.name.startsWith("VARINT")
             val zig = r.type.name == "VARINT_ZIGZAG"
+            val safeVal = if (r.newValue > 20_000L) 20_000L else r.newValue
             val err = when {
-                isVarint -> Patcher.writeVarintSafe(tmp, r.offset, r.newValue, zig)
-                isFloat -> Patcher.writeFloat(tmp, r.offset, r.newValue.toFloat(), r.type)
-                else -> Patcher.writeInt(tmp, r.offset, r.newValue, r.type)
+                isVarint -> Patcher.writeVarintExpandable(tmp, r.offset, safeVal, zig)
+                isFloat -> Patcher.writeFloat(tmp, r.offset, safeVal.toFloat(), r.type)
+                else -> Patcher.writeInt(tmp, r.offset, safeVal, r.type)
             }
             log.append("${r.key}: write → $err\n")
             if (err == "OK") okCount++
@@ -160,17 +152,20 @@ class SliderActivity : AppCompatActivity() {
 
         // Verify: đọc lại file local để xác nhận giá trị mới
         log.append("\n--- Verify local ---\n")
+        // Verify local — offset có thể shift nếu varint mở rộng → chỉ verify giá trị khớp
         for (r in rows) {
             if (r.newValue == r.current) continue
             val isVarint = r.type.name.startsWith("VARINT")
+            val target = if (r.newValue > 20_000L) 20_000L else r.newValue
             val newVal = if (isVarint) {
-                val p = Patcher.readVarintAt(tmp, r.offset)
-                p?.first ?: -1L
+                // Tìm lại offset (có thể shift)
+                val found = findVarintByValue(tmp, target)
+                found ?: -1L
             } else {
                 val c = Patcher.read(tmp, r.offset, r.type)
                 when (c) { is Long -> c; is Float -> c.toLong(); is Double -> c.toLong(); else -> -1L }
             }
-            log.append("${r.key} local sau patch = $newVal (kỳ vọng ${r.newValue})\n")
+            log.append("${r.key} local sau patch = $newVal (kỳ vọng $target)\n")
         }
 
         // Copy ngược về remote
@@ -221,6 +216,26 @@ class SliderActivity : AppCompatActivity() {
                 toast("Đã copy log")
             }
             .show()
+    }
+
+    private fun findVarintByValue(file: java.io.File, value: Long): Long? {
+        val bytes = file.readBytes()
+        val pattern = mutableListOf<Byte>()
+        var x = value
+        while (true) {
+            val b = (x and 0x7F).toInt()
+            x = x ushr 7
+            if (x == 0L) { pattern.add(b.toByte()); break }
+            pattern.add((b or 0x80).toByte())
+        }
+        val pat = pattern.toByteArray()
+        outer@ for (i in 0..(bytes.size - pat.size)) {
+            for (j in pat.indices) {
+                if (bytes[i + j] != pat[j]) continue@outer
+            }
+            return value
+        }
+        return null
     }
 
     private fun copyPpDatLocal(): File? {

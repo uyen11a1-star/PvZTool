@@ -157,4 +157,72 @@ object Patcher {
         } catch (e: Exception) { "ERR: ${e.message}" }
     }
 
+
+    // Đọc varint từ ByteArray
+    private fun readVarintFromBytes(bytes: ByteArray, offset: Int): Pair<Long, Int>? {
+        if (offset < 0 || offset >= bytes.size) return null
+        var result = 0L
+        var shift = 0
+        var bytesRead = 0
+        var i = offset
+        while (shift <= 63 && i < bytes.size) {
+            val b = bytes[i].toInt() and 0xFF
+            bytesRead++
+            result = result or ((b.toLong() and 0x7F) shl shift)
+            if (b and 0x80 == 0) return result to bytesRead
+            shift += 7
+            i++
+        }
+        return null
+    }
+
+    // Encode varint ra ByteArray
+    private fun encodeVarintBytes(value: Long): ByteArray {
+        val out = mutableListOf<Byte>()
+        var x = value
+        while (true) {
+            val b = (x and 0x7F).toInt()
+            x = x ushr 7
+            if (x == 0L) { out.add(b.toByte()); break }
+            out.add((b or 0x80).toByte())
+        }
+        return out.toByteArray()
+    }
+
+    // Ghi varint có thể mở rộng — shift toàn bộ byte sau varint nếu cần thêm byte
+    fun writeVarintExpandable(file: File, offset: Int, value: Long, zigzag: Boolean = false): String {
+        if (!file.exists()) return "ERR: file không tồn tại"
+        val v = if (zigzag) (value shl 1) xor (value shr 63) else value
+        val newBytes = encodeVarintBytes(v)
+        val bytes = file.readBytes()
+
+        val old = readVarintFromBytes(bytes, offset) ?: return "ERR: không đọc được varint tại offset"
+        val (_, oldLen) = old
+        val diff = newBytes.size - oldLen
+
+        val newArr = if (diff == 0) {
+            bytes
+        } else if (diff > 0) {
+            val out = ByteArray(bytes.size + diff)
+            System.arraycopy(bytes, 0, out, 0, offset)
+            System.arraycopy(newBytes, 0, out, offset, newBytes.size)
+            System.arraycopy(bytes, offset + oldLen, out, offset + newBytes.size, bytes.size - offset - oldLen)
+            out
+        } else {
+            val out = ByteArray(bytes.size + diff)
+            System.arraycopy(bytes, 0, out, 0, offset)
+            System.arraycopy(newBytes, 0, out, offset, newBytes.size)
+            System.arraycopy(bytes, offset + oldLen, out, offset + newBytes.size, bytes.size - offset - oldLen)
+            out
+        }
+
+        if (diff == 0) {
+            System.arraycopy(newBytes, 0, bytes, offset, newBytes.size)
+            file.writeBytes(bytes)
+        } else {
+            file.writeBytes(newArr)
+        }
+        return "OK (shift ${diff} byte)"
+    }
+
 }
