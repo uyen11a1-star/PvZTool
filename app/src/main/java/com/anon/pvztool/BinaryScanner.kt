@@ -9,8 +9,11 @@ object BinaryScanner {
 
     data class Match(
         val offset: Int,
-        val bytesHex: String,     // 16 byte xung quanh offset
-        val preview: String       // ASCII preview
+        val bytesHex: String,
+        val preview: String,
+        val label: String = "Unknown",
+        val decodedValue: Long = -1L,
+        val keyChar: String = ""
     )
 
     enum class ValueType(val label: String, val size: Int) {
@@ -130,7 +133,103 @@ object BinaryScanner {
             val c = b.toInt() and 0xFF
             if (c in 32..126) c.toChar() else '.'
         }.joinToString("")
-        return Match(offset, hex, ascii)
+        val (label, keyChar) = identifyKey(file, offset)
+        val decoded = decodeValueAt(file, offset)
+        return Match(offset, hex, ascii, label, decoded, keyChar)
+    }
+
+    // Key map
+    private val KEY_MAP = mapOf(
+        "c" to "Coin",
+        "g" to "Gems",
+        "t" to "Trophy",
+        "tc" to "Trophy",
+        "m" to "Mints",
+        "s" to "Stars",
+        "pf" to "Penny Fuel",
+        "zs" to "Zen Sun",
+        "ga" to "Gauntlet",
+        "pt" to "Penny Tickets",
+        "n" to "Player Name",
+        "i" to "Current Level",
+        "v" to "Version",
+        "uid" to "UID",
+        "objclass" to "objclass",
+        "objdata" to "objdata",
+        "tei" to "tei",
+        "utl" to "utl",
+        "mfd" to "mfd",
+        "lsc" to "lsc",
+        "ltfet" to "ltfet"
+    )
+
+    // Đọc ngược từ offset để tìm pattern `90 01 <char> 24` hoặc `90 0N <key> 24`
+    private fun identifyKey(file: File, offset: Int): Pair<String, String> {
+        try {
+            // Đọc 32 byte trước offset
+            val back = 32
+            val start = (offset - back).coerceAtLeast(0)
+            val len = offset - start
+            if (len < 3) return "Unknown" to ""
+            val buf = ByteArray(len)
+            RandomAccessFile(file, "r").use { raf ->
+                raf.seek(start.toLong())
+                raf.readFully(buf)
+            }
+
+            // Tìm tag key gần nhất: 0x90 0xNN <N bytes ASCII>
+            for (i in (buf.size - 2) downTo 0) {
+                val tag = buf[i].toInt() and 0xFF
+                if (tag == 0x90 && i + 2 < buf.size) {
+                    val keyLen = buf[i + 1].toInt() and 0xFF
+                    if (keyLen in 1..20 && i + 2 + keyLen <= buf.size) {
+                        val keyBytes = buf.copyOfRange(i + 2, i + 2 + keyLen)
+                        val key = String(keyBytes, Charsets.US_ASCII)
+                        if (key.all { it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it == '_' }) {
+                            val label = KEY_MAP[key] ?: key
+                            return label to key
+                        }
+                    }
+                }
+            }
+            // Fallback: pattern 0x91 <keyLen u16le> <key>
+            for (i in (buf.size - 4) downTo 0) {
+                val tag = buf[i].toInt() and 0xFF
+                if (tag == 0x91 && i + 4 < buf.size) {
+                    val keyLen = (buf[i + 1].toInt() and 0xFF) or ((buf[i + 2].toInt() and 0xFF) shl 8)
+                    if (keyLen in 1..30 && i + 3 + keyLen <= buf.size) {
+                        val keyBytes = buf.copyOfRange(i + 3, i + 3 + keyLen)
+                        val key = String(keyBytes, Charsets.US_ASCII)
+                        if (key.all { it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it == '_' }) {
+                            val label = KEY_MAP[key] ?: key
+                            return label to key
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+        return "Unknown" to ""
+    }
+
+    // Decode varint value tại offset
+    private fun decodeValueAt(file: File, offset: Int): Long {
+        try {
+            RandomAccessFile(file, "r").use { raf ->
+                raf.seek(offset.toLong())
+                var result = 0L
+                var shift = 0
+                var bytesRead = 0
+                while (shift <= 35 && bytesRead < 5) {
+                    val b = raf.read()
+                    if (b < 0) break
+                    bytesRead++
+                    result = result or ((b.toLong() and 0x7F) shl shift)
+                    if (b and 0x80 == 0) return result
+                    shift += 7
+                }
+            }
+        } catch (_: Exception) {}
+        return -1L
     }
 
     private fun encodeInt(value: Long, type: ValueType): ByteArray {

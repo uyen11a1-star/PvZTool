@@ -15,9 +15,10 @@ class ScannerAdapter(
         private set
 
     class VH(v: View) : RecyclerView.ViewHolder(v) {
+        val label: TextView = v.findViewById(R.id.mLabel)
+        val value: TextView = v.findViewById(R.id.mValue)
         val off: TextView = v.findViewById(R.id.mOffset)
         val hex: TextView = v.findViewById(R.id.mHex)
-        val ascii: TextView = v.findViewById(R.id.mAscii)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
@@ -27,9 +28,14 @@ class ScannerAdapter(
 
     override fun onBindViewHolder(h: VH, p: Int) {
         val m = items[p]
+        h.label.text = m.label
+        h.label.setTextColor(
+            if (m.label == "Unknown") 0xFF8888A0.toInt() else 0xFFFF1493.toInt()
+        )
+        h.value.text = if (m.decodedValue >= 0) "= ${m.decodedValue}" else ""
         h.off.text = "0x%08X  (%d)".format(m.offset, m.offset)
         h.hex.text = m.bytesHex
-        h.ascii.text = m.preview
+
         h.itemView.setBackgroundColor(if (p == selectedPos) 0x20FF1493 else 0xFFFFFFFF.toInt())
         h.itemView.setOnClickListener {
             val old = selectedPos
