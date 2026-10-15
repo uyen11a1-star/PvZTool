@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="240dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:background="@drawable/menu_bg"
+    android:elevation="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="PvZ Quick Patch"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#FF1493" />
+
+        <TextView
+            android:id="@+id/menuClose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✕"
+            android:textSize="16sp"
+            android:textColor="#666680"
+            android:padding="6dp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/menuStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="10sp"
+        android:fontFamily="monospace"
+        android:textColor="#8888A0"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:text="Sẵn sàng" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:id="@+id/qCoin"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/quick_btn_bg"
+            android:padding="10dp"
+            android:gravity="center"
+            android:text="Coin 20k"
+            android:textColor="#1A1A2E"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/qGem"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/quick_btn_bg"
+            android:padding="10dp"
+            android:gravity="center"
+            android:text="Gem 20k"
+            android:textColor="#1A1A2E"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/qAll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/quick_btn_bg"
+        android:padding="10dp"
+        android:gravity="center"
+        android:text="Patch tất cả = 20000"
+        android:textColor="#1A1A2E"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/qRestoreBackup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/quick_btn_bg"
+        android:padding="10dp"
+        android:gravity="center"
+        android:text="Khôi phục backup mới nhất"
+        android:textColor="#B91C1C"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/qLaunchPvZ"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/quick_btn_bg"
+        android:padding="10dp"
+        android:gravity="center"
+        android:text="Mở PvZ2"
+        android:textColor="#1A1A2E"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/qOpenApp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/quick_btn_bg"
+        android:padding="10dp"
+        android:gravity="center"
+        android:text="Mở PvZ Tool"
+        android:textColor="#1A1A2E"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/qHide"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:padding="8dp"
+        android:gravity="center"
+        android:text="Tắt bubble"
+        android:textColor="#8888A0"
+        android:textSize="11sp" />
+</LinearLayout>

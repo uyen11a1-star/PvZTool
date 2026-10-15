@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
@@ -42,6 +43,9 @@ class MainActivity : AppCompatActivity() {
         savedOffsets = findViewById(R.id.savedOffsets)
 
         findViewById<MaterialButton>(R.id.btnShizuku).setOnClickListener { requestShizuku() }
+        findViewById<MaterialButton>(R.id.btnBubble).setOnClickListener {
+            startFloatingService()
+        }
         findViewById<MaterialButton>(R.id.btnBackup).setOnClickListener {
             val r = BackupManager.backup(Const.PP_DAT, "manual")
             toast(if (r.startsWith("OK")) "Đã lưu backup" else r)
@@ -70,6 +74,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onResume() { super.onResume(); refreshStatus() }
+
+    private fun startFloatingService() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            AlertDialog.Builder(this)
+                .setTitle("Cần quyền vẽ trên app khác")
+                .setMessage("Cấp quyền để hiện bubble nổi trên PvZ2.")
+                .setPositiveButton("Mở Settings") { _, _ ->
+                    startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:$packageName")))
+                }
+                .setNegativeButton("Hủy", null)
+                .show()
+            return
+        }
+        val i = Intent(this, FloatingService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(i) else startService(i)
+        toast("Đã bật bubble — quay lại màn hình chính để thấy nút PvZ")
+    }
 
     private fun ensureAllFiles() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

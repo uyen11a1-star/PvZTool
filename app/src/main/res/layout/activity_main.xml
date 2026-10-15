@@ -68,6 +68,15 @@
             android:textColor="#FFFFFF" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBubble"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Bật bubble nổi trên PvZ2"
+            app:backgroundTint="#FF1493"
+            android:textColor="#FFFFFF" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBackup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
